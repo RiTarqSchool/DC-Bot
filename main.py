@@ -7,6 +7,7 @@ import os
 import re
 
 # ---- CONFIG ----
+GUILD_ID = 1330009513402830848  # replace with your server ID
 MOD_QUEUE_CHANNEL_ID = 1412025983875289129
 CHALLENGE_CHANNEL_ID = 1412025983875289129
 MOD_LINKS_CHANNEL_ID = 1412025983875289129
@@ -27,8 +28,9 @@ geo_profiles = {}  # discord_id -> geoguessr profile URL
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
     try:
-        synced = await bot.tree.sync()
-        print(f"🔧 Synced {len(synced)} slash commands.")
+        guild = discord.Object(id=GUILD_ID)
+        synced = await bot.tree.sync(guild=guild)
+        print(f"🔧 Synced {len(synced)} slash commands in your server only.")
     except Exception as e:
         print(f"Sync error: {e}")
 
@@ -36,6 +38,10 @@ async def on_ready():
 @bot.tree.command(name="attach", description="Upload a file for mod approval")
 @app_commands.describe(file="The file you want to upload")
 async def attach(interaction: discord.Interaction, file: discord.Attachment):
+    if interaction.guild.id != GUILD_ID:
+        await interaction.response.send_message("❌ This command is only available in the official server.", ephemeral=True)
+        return
+
     mod_channel = bot.get_channel(MOD_QUEUE_CHANNEL_ID)
     if not mod_channel:
         await interaction.response.send_message("⚠️ Mod queue channel not found.", ephemeral=True)
@@ -118,6 +124,10 @@ async def on_raw_reaction_add(payload):
 @bot.tree.command(name="link", description="Link your Geoguessr profile")
 @app_commands.describe(url="Your Geoguessr profile URL")
 async def link(interaction: discord.Interaction, url: str):
+    if interaction.guild.id != GUILD_ID:
+        await interaction.response.send_message("❌ This command is only available in the official server.", ephemeral=True)
+        return
+
     if not re.match(r"^https://(www\.)?geoguessr\.com/user/.+", url):
         await interaction.response.send_message("❌ Invalid Geoguessr URL. Must start with https://www.geoguessr.com/user/", ephemeral=True)
         return
@@ -133,6 +143,10 @@ async def link(interaction: discord.Interaction, url: str):
 @bot.tree.command(name="challenge", description="Post a Geo challenge link")
 @app_commands.describe(link="The Geoguessr challenge URL", pingrole="Ping the Geoguessr role?")
 async def challenge(interaction: discord.Interaction, link: str, pingrole: bool = False):
+    if interaction.guild.id != GUILD_ID:
+        await interaction.response.send_message("❌ This command is only available in the official server.", ephemeral=True)
+        return
+
     if not interaction.user.guild_permissions.manage_messages:
         await interaction.response.send_message("❌ You don’t have permission to post challenges.", ephemeral=True)
         return
